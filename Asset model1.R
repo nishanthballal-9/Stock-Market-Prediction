@@ -1,0 +1,25 @@
+library("data.table", lib.loc="~/R/win-library/3.2")
+train <- read.csv("Asset model1.csv")
+View(train)
+summary(train)
+plot(as.Date(train$Date, "%d-%b-%y"), train$Close, xlab = "Dates", ylab = "Closing Price", type = "l", col = "red", main = "Closing price of NIFTY for '98 to '13")
+library(tseries, quietly = T)
+adf.test(train$Close)
+nifty_ret <- 100 * diff(log(train$Close))
+View(nifty_ret)
+adf.test(nifty_ret)
+acf(nifty_ret)
+pacf(nifty_ret)
+summary(arma(nifty_ret, order = c(1, 1)))
+nifty_ret_train <- nifty_ret[1:(0.996 * length(nifty_ret))]  # Train dataset
+nifty_ret_test <- nifty_ret[(0.996 * length(nifty_ret) + 1):length(nifty_ret)]  # Test dataset
+fit <- arima(nifty_ret_train, order = c(1,0,1))
+library(forecast, quietly = T)
+arma.preds <- predict(fit, n.ahead = (length(nifty_ret) - (0.996 * length(nifty_ret))))$pred
+arma.forecast <- forecast(fit, h = 15)
+plot(arma.forecast, main = "ARMA forecasts for NIFTY")  
+accuracy(arma.preds, nifty_ret_test) # RMSE values
+View(arma.forecast)
+fit2 <- arima(nifty_ret, order=c(1,0,1))
+arma.forecast1 <- forecast(fit2, h = 3)
+View(arma.forecast1)
